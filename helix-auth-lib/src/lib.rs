@@ -1,8 +1,10 @@
 #[macro_use]
 extern crate serde_derive;
-pub mod claims;
+mod claims;
+pub mod error;
 mod tokenizer;
 
+use crate::error::*;
 use chrono::prelude::*;
 use claims::Claims;
 use crypto::digest::Digest;
@@ -12,11 +14,14 @@ use uuid;
 
 pub struct HelixAuth {}
 impl HelixAuth {
-    pub fn is_auth_token_valid(token: &str) -> bool {
-        HelixAuth::get_token_data(token).is_ok()
+    pub fn is_auth_token_valid(token: &str) -> HelixAuthResult<()> {
+        match HelixAuth::get_token_data(token).is_ok() {
+            true => Ok(()),
+            false => Err(HelixAuthError::InvalidToken),
+        }
     }
 
-    pub fn get_token_data(token: &str) -> Result<Claims, String> {
+    fn get_token_data(token: &str) -> Result<Claims, String> {
         let api_auth_key = env::var("API_AUTH_KEY").expect("API_AUTH_KEY not found.");
         let v: Vec<&str> = token.split(' ').collect();
         let tokenizer = tokenizer::Tokenizer::new(api_auth_key.to_string());
@@ -26,7 +31,7 @@ impl HelixAuth {
     }
 
     #[allow(dead_code)]
-    pub fn refresh_auth_tokens(token: &str) -> Result<(String, String), String> {
+    fn refresh_auth_tokens(token: &str) -> Result<(String, String), String> {
         let api_auth_key = env::var("API_AUTH_KEY").expect("API_AUTH_KEY not found.");
 
         let tokenizer = tokenizer::Tokenizer::new(api_auth_key.to_string());
@@ -44,7 +49,7 @@ impl HelixAuth {
         }
     }
 
-    pub fn _generate_refresh_data(data: &str) -> String {
+    fn _generate_refresh_data(data: &str) -> String {
         let salt = env::var("API_AUTH_KEY").expect("API_AUTH_KEY not found.");
         let utc: DateTime<Utc> = Utc::now();
 
@@ -62,7 +67,7 @@ impl HelixAuth {
         hasher.result_str()
     }
 
-    pub fn generate_keys(
+    fn generate_keys(
         user: &str,
         user_uuid: &uuid::Uuid,
         person_uuid: &uuid::Uuid,

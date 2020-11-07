@@ -5,7 +5,15 @@ use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::{Error, HttpResponse};
 use futures::future::{ok, Either, Ready};
 
-pub struct AuthValidator;
+pub struct AuthValidator {
+    exception_uri: Vec<String>,
+}
+
+impl AuthValidator {
+    pub fn new(exception_uri: Vec<String>) -> Self {
+        AuthValidator { exception_uri }
+    }
+}
 
 impl<S, B> Transform<S> for AuthValidator
 where
@@ -20,12 +28,30 @@ where
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ok(AuthValidatorMiddleware { service })
+        ok(AuthValidatorMiddleware {
+            service,
+            exception_uri: self.exception_uri.to_vec(),
+        })
     }
 }
 
 pub struct AuthValidatorMiddleware<S> {
     service: S,
+    exception_uri: Vec<String>,
+}
+
+impl<S> AuthValidatorMiddleware<S> {
+    fn is_api_call(&self, uri: &str) -> bool {
+        uri.starts_with("/api")
+    }
+    fn is_exception_uri(&self, uri: &str) -> bool {
+        let search: String = uri.replace("//", "/");
+        self.exception_uri.contains(&search)
+    }
+    fn is_auth_token_valid(&self, token: &str) -> bool {
+        //TODO: need shared library
+        true
+    }
 }
 
 impl<S, B> Service for AuthValidatorMiddleware<S>
@@ -47,13 +73,13 @@ where
 
         //Check if the route is excluded.
         let uri = &req.uri().to_string();
-        if !is_api_call(uri) || is_exception_uri(uri) {
+        if !self.is_api_call(uri) || self.is_exception_uri(uri) {
             Either::Left(self.service.call(req))
         } else {
             //Valid Authorization header
             match req.headers().get("Authorization") {
                 Some(value) => {
-                    if is_auth_token_valid(&value.to_str().unwrap().to_string()) {
+                    if self.is_auth_token_valid(&value.to_str().unwrap().to_string()) {
                         Either::Left(self.service.call(req))
                     } else {
                         //Auth NOT OK"
@@ -71,22 +97,4 @@ where
             }
         }
     }
-}
-
-fn is_api_call(uri: &str) -> bool {
-    uri.starts_with("/api")
-}
-
-fn is_exception_uri(uri: &str) -> bool {
-    let search: String = uri.replace("//", "/");
-    let mut v: Vec<String> = Vec::new();
-
-    v.push("/api/_".to_string());
-    v.push("/api/version".to_string());
-    v.contains(&search)
-}
-
-fn is_auth_token_valid(token: &str) -> bool {
-    //TODO: need shared library
-    true
 }

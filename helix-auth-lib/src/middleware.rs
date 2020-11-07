@@ -1,5 +1,6 @@
 use std::task::{Context, Poll};
 
+use crate::HelixAuth;
 use actix_service::{Service, Transform};
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::{Error, HttpResponse};
@@ -49,8 +50,10 @@ impl<S> AuthValidatorMiddleware<S> {
         self.exception_uri.contains(&search)
     }
     fn is_auth_token_valid(&self, token: &str) -> bool {
-        //TODO: need shared library
-        true
+        match HelixAuth::is_auth_token_valid(token) {
+            Ok(_) => true,
+            Err(_) => false,
+        }
     }
 }
 

@@ -2,6 +2,7 @@
 extern crate serde_derive;
 mod claims;
 pub mod error;
+pub mod middleware;
 mod tokenizer;
 
 use crate::error::*;

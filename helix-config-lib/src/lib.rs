@@ -10,7 +10,7 @@ pub struct Configuration {
 }
 
 impl Configuration {
-    pub fn new(&self, version: Version) -> Self {
+    pub fn new(version: Version) -> Self {
         //Load configuration into env variables.
         match env::args().len() {
             1 => {

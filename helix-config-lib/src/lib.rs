@@ -1,16 +1,12 @@
 #[macro_use]
 extern crate serde_derive;
-
-use crate::version::Version;
 use std::env;
 pub mod version;
 
-pub struct Configuration {
-    version: Version,
-}
+pub struct Configuration;
 
 impl Configuration {
-    pub fn new(version: Version) -> Self {
+    pub fn new() -> Self {
         //Load configuration into env variables.
         match env::args().len() {
             1 => {
@@ -26,7 +22,7 @@ impl Configuration {
             }
         }
 
-        Configuration { version }
+        Configuration {}
     }
 
     pub fn get_served_addr(&self) -> String {
@@ -55,9 +51,5 @@ impl Configuration {
     pub fn get_keep_alive(&self) -> usize {
         let str_value = env::var("ACTIX_KEEP_ALIVE").expect("ACTIX_KEEP_ALIVE not found.");
         str_value.parse::<usize>().unwrap()
-    }
-
-    pub fn version(&self) -> &Version {
-        &self.version
     }
 }

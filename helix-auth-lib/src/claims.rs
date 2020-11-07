@@ -36,8 +36,8 @@ pub fn get_access_token_claims(
 ) -> Claims {
     let sub = "access-token".to_owned();
     let iss = env::var("HOSTNAME").expect("HOSTNAME not found.");
-    let exp: i64 = env::var("ACCESS_TOKEN_MAX_LIFETIME")
-        .expect("ACCESS_TOKEN_MAX_LIFETIME not found.")
+    let exp: i64 = env::var("HELIX_ACCESS_TOKEN_MAX_LIFETIME")
+        .expect("HELIX_ACCESS_TOKEN_MAX_LIFETIME not found.")
         .parse()
         .unwrap();
 
@@ -51,8 +51,8 @@ pub fn get_refresh_token_claims(
 ) -> Claims {
     let sub = "refresh-token".to_owned();
     let iss = env::var("HOSTNAME").expect("HOSTNAME not found.");
-    let exp: i64 = env::var("REFRESH_TOKEN_MAX_LIFETIME")
-        .expect("REFRESH_TOKEN_MAX_LIFETIME not found.")
+    let exp: i64 = env::var("HELIX_REFRESH_TOKEN_MAX_LIFETIME")
+        .expect("HELIX_REFRESH_TOKEN_MAX_LIFETIME not found.")
         .parse()
         .unwrap();
 

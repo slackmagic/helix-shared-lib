@@ -22,7 +22,7 @@ impl HelixAuth {
     }
 
     fn get_token_data(token: &str) -> Result<Claims, String> {
-        let api_auth_key = env::var("API_AUTH_KEY").expect("API_AUTH_KEY not found.");
+        let api_auth_key = env::var("HELIX_API_AUTH_KEY").expect("API_AUTH_KEY not found.");
         let v: Vec<&str> = token.split(' ').collect();
         let tokenizer = tokenizer::Tokenizer::new(api_auth_key.to_string());
         tokenizer

@@ -2,6 +2,7 @@
 members = [
     "helix-db-lib",
     "helix-auth-lib",
+    "helix-config-lib",
 ]
 
 ##DEFAULT RUNNING BIN

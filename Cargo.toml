@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "helix-db-lib",
+    "helix-auth-lib",
+]
+
+##DEFAULT RUNNING BIN
+
+
+##__FIX FOR ARM COMPILATION SINCE RUST 1.38
+[profile.release]
+codegen-units = 1

@@ -1,0 +1,13 @@
+[package]
+name = "helix-auth-lib"
+version = "0.1.0"
+authors = ["SlackMagiC <laurent.pietrzyk@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+##API MANAGEMENT
+actix-web = "3.1.0"
+actix-service = "1.0.6"
+futures = "0.3.1"

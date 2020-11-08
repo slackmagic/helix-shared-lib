@@ -38,7 +38,7 @@ impl HelixAuth {
         user_uuid: &uuid::Uuid,
         person_uuid: &uuid::Uuid,
     ) -> Result<(String, String), String> {
-        let api_auth_key = env::var("API_AUTH_KEY").expect("API_AUTH_KEY not found.");
+        let api_auth_key = env::var("HELIX_API_AUTH_KEY").expect("API_AUTH_KEY not found.");
 
         let tokenizer_access = tokenizer::Tokenizer::new(api_auth_key.to_string());
         let result_access = tokenizer_access
@@ -78,7 +78,7 @@ impl HelixAuth {
 
     #[allow(dead_code)]
     fn refresh_auth_tokens(token: &str) -> Result<(String, String), String> {
-        let api_auth_key = env::var("API_AUTH_KEY").expect("API_AUTH_KEY not found.");
+        let api_auth_key = env::var("HELIX_API_AUTH_KEY").expect("API_AUTH_KEY not found.");
 
         let tokenizer = tokenizer::Tokenizer::new(api_auth_key.to_string());
         let result = tokenizer
@@ -96,7 +96,7 @@ impl HelixAuth {
     }
 
     fn _generate_refresh_data(data: &str) -> String {
-        let salt = env::var("API_AUTH_KEY").expect("API_AUTH_KEY not found.");
+        let salt = env::var("HELIX_API_AUTH_KEY").expect("API_AUTH_KEY not found.");
         let utc: DateTime<Utc> = Utc::now();
 
         //Hash construct

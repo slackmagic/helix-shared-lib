@@ -13,6 +13,10 @@ impl PostgresConnector {
         }
     }
 
+    pub fn get_connection(&self) -> &Connection {
+        &self.db_conn
+    }
+
     pub fn get_transaction(&self) -> Transaction {
         self.db_conn.transaction().unwrap()
     }

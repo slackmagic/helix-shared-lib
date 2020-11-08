@@ -9,3 +9,4 @@ edition = "2018"
 name = "helix_db_lib"
 
 [dependencies]
+postgres = {version = "^0.15.2", features =["with-chrono", "with-uuid", "with-serde_json"]}

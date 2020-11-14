@@ -24,7 +24,7 @@ impl<I, L> TrackerDomain<I, L> {
     }
 }
 
-impl<I: DeserializeOwned, L: Serialize + DeserializeOwned> TrackerInteractorTrait<I, L>
+impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned> TrackerInteractorTrait<I, L>
     for TrackerDomain<I, L>
 {
     fn get_items(

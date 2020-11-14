@@ -69,8 +69,10 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         let query: String = "
         SELECT *
         FROM
-            tracker.log
+            tracker.log,
+            tracker.item,
         WHERE 1=1
+        AND tracker.item.id = tracker.log.item_
         AND tracker.item.type_ = $1
         AND tracker.item.owner_ = $2
         ORDER BY tracker.item.id asc "

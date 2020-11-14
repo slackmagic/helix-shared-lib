@@ -59,6 +59,45 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         }
     }
 
+    fn get_logs_by_type(
+        &self,
+        type_id: &String,
+        owner_uuid: &uuid::Uuid,
+    ) -> StorageResult<Vec<Log<T>>> {
+        let mut result: Vec<Log<T>> = Vec::new();
+
+        let query: String = "
+        SELECT *
+        FROM 
+            FROM tracker.log
+        WHERE 1=1
+        AND tracker.item.type_ = $1
+        AND tracker.item.owner_ = $2
+        ORDER BY tracker.item.id asc "
+            .to_string();
+
+        let rows = &self
+            .db_conn
+            .query(query.as_str(), &[&type_id, &owner_uuid])
+            .unwrap();
+
+        for row in rows {
+            let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
+                Ok(payload) => Some(payload),
+                Err(_) => None,
+            };
+            result.push(Log {
+                uuid: row.get("uuid"),
+                created_on: row.get("created_on"),
+                hash: row.get("hash"),
+                data: parsed_payload,
+                item_id: row.get("item_"),
+            });
+        }
+
+        Ok(result)
+    }
+
     fn get_last_logs_by_type(
         &self,
         type_id: &String,

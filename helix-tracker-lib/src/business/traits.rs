@@ -17,6 +17,12 @@ pub trait TrackerDomainTrait<I: Serialize + DeserializeOwned, L: Serialize + Des
 
     fn add_log(&self, item_id: &i32, payload: &L) -> TrackerDomainResult<Option<Log<L>>>;
 
+    fn get_logs_by_type(
+        &self,
+        type_id: &String,
+        owner_uuid: &uuid::Uuid,
+    ) -> TrackerDomainResult<Vec<Log<L>>>;
+
     fn get_last_logs_by_type(
         &self,
         type_id: &String,

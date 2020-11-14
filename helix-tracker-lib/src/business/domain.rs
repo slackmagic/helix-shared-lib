@@ -39,6 +39,16 @@ impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned> TrackerDo
         Ok(self.log_storage.add_log(item_id, payload)?)
     }
 
+    fn get_logs_by_type(
+        &self,
+        type_id: &String,
+        owner_uuid: &uuid::Uuid,
+    ) -> TrackerDomainResult<Vec<Log<L>>> {
+        Ok(self
+            .log_storage
+            .get_last_logs_by_type(type_id, owner_uuid)?)
+    }
+
     fn get_last_logs_by_type(
         &self,
         type_id: &String,

@@ -1,5 +1,5 @@
 use crate::business::error::*;
-use crate::business::traits::*;
+use crate::business::traits::TrackerDomainTrait;
 use crate::core::item::*;
 use crate::core::log::*;
 use crate::storage::traits::*;
@@ -24,7 +24,7 @@ impl<I, L> TrackerDomain<I, L> {
     }
 }
 
-impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned> TrackerInteractorTrait<I, L>
+impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned> TrackerDomainTrait<I, L>
     for TrackerDomain<I, L>
 {
     fn get_items(

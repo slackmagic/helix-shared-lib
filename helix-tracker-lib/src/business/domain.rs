@@ -1,19 +1,51 @@
+use crate::business::error::*;
+use crate::business::traits::*;
+use crate::core::item::*;
+use crate::core::log::*;
 use crate::storage::traits::*;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::boxed::Box;
 
-pub struct TrackerDomain<I> {
+pub struct TrackerDomain<I, L> {
     item_storage: Box<dyn ItemStorageTrait<I>>,
-    //log_storage: Box<dyn LogStorageTrait<L>>,
+    log_storage: Box<dyn LogStorageTrait<L>>,
 }
 
-impl<I> TrackerDomain<I> {
+impl<I, L> TrackerDomain<I, L> {
     pub fn new(
         item_storage: Box<dyn ItemStorageTrait<I>>,
-        //log_storage: Box<dyn LogStorageTrait<L>>,
+        log_storage: Box<dyn LogStorageTrait<L>>,
     ) -> Self {
         TrackerDomain {
             item_storage,
-            //log_storage,
+            log_storage,
         }
+    }
+}
+
+impl<I: DeserializeOwned, L: Serialize + DeserializeOwned> TrackerInteractorTrait<I, L>
+    for TrackerDomain<I, L>
+{
+    fn get_items(
+        &self,
+        type_id: &String,
+        owner_uuid: &uuid::Uuid,
+    ) -> TrackerDomainResult<Vec<Item<I>>> {
+        Ok(self.item_storage.get_items(type_id, owner_uuid)?)
+    }
+
+    fn add_log(&self, item_id: &i32, payload: &L) -> TrackerDomainResult<Option<Log<L>>> {
+        Ok(self.log_storage.add_log(item_id, payload)?)
+    }
+
+    fn get_last_logs_by_type(
+        &self,
+        type_id: &String,
+        owner_uuid: &uuid::Uuid,
+    ) -> TrackerDomainResult<Vec<Log<L>>> {
+        Ok(self
+            .log_storage
+            .get_last_logs_by_type(type_id, owner_uuid)?)
     }
 }

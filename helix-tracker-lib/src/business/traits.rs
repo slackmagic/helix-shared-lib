@@ -4,24 +4,20 @@ use crate::core::log::Log;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-pub trait TrackerInteractorTrait {
+pub trait TrackerInteractorTrait<I: DeserializeOwned, L: Serialize + DeserializeOwned> {
     //fn create_item<T: DeserializeOwned>(&self, item: Item<T>) -> TrackerDomainResult<Item<T>>;
 
-    fn get_items<T: DeserializeOwned>(
+    fn get_items(
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
-    ) -> TrackerDomainResult<Vec<Item<T>>>;
+    ) -> TrackerDomainResult<Vec<Item<I>>>;
 
-    fn add_log<T: Serialize + DeserializeOwned>(
-        &self,
-        item_id: &i32,
-        payload: &T,
-    ) -> TrackerDomainResult<Option<Log<T>>>;
+    fn add_log(&self, item_id: &i32, payload: &L) -> TrackerDomainResult<Option<Log<L>>>;
 
-    fn get_last_logs_by_type<T: DeserializeOwned>(
+    fn get_last_logs_by_type(
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
-    ) -> TrackerDomainResult<Vec<Log<T>>>;
+    ) -> TrackerDomainResult<Vec<Log<L>>>;
 }

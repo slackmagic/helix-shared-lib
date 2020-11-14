@@ -70,7 +70,7 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         SELECT *
         FROM
             tracker.log,
-            tracker.item,
+            tracker.item
         WHERE 1=1
         AND tracker.item.id = tracker.log.item_
         AND tracker.item.type_ = $1

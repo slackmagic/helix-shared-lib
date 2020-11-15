@@ -25,7 +25,7 @@ jsonwebtoken = "5.0.1"
 rust-crypto = "^0.2"
 
 ##DATA UTILS => UTC Date, UUID generation
-uuid = { version = "0.5", features = ["v5", "serde"]}
+uuid = { version = "0.8", features = ["v5", "serde"]}
 chrono = { version = "^0.4", features = ["serde"] }
 
 

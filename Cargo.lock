@@ -914,7 +914,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "thiserror",
- "uuid 0.5.1",
+ "uuid 0.8.1",
 ]
 
 [[package]]
@@ -1853,12 +1853,6 @@ dependencies = [
 
 [[package]]
 name = "sha1"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc30b1e1e8c40c121ca33b86c23308a090d19974ef001b4bf6e61fd1a0fb095c"
-
-[[package]]
-name = "sha1"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2579985fda508104f7587689507983eadd6a6e84dd35d6d115361f530916fa0d"
@@ -1981,7 +1975,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "sha1 0.6.0",
+ "sha1",
  "syn",
 ]
 
@@ -2351,10 +2345,6 @@ name = "uuid"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bcc7e3b898aa6f6c08e5295b6c89258d1331e9ac578cc992fb818759951bdc22"
-dependencies = [
- "serde",
- "sha1 0.2.0",
-]
 
 [[package]]
 name = "uuid"
@@ -2363,7 +2353,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9fde2f6a4bea1d6e007c4ad38c6839fa71cbb63b6dbf5b595aa38dc9b1093c11"
 dependencies = [
  "serde",
- "sha1 0.6.0",
+ "sha1",
 ]
 
 [[package]]

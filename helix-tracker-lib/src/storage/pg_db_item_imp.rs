@@ -1,44 +1,49 @@
 use crate::core::item::*;
 use crate::storage::error::*;
 use crate::storage::traits::ItemStorageTrait;
-use postgres::{Connection, TlsMode};
+use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use std::marker::PhantomData;
+use std::sync::Arc;
+use tokio_postgres::{Client, NoTls};
 use uuid;
 
 pub struct PgDbItemTrackerStorage<T: DeserializeOwned> {
-    pub db_conn: Connection,
+    pub client: Arc<Client>,
     item_type: PhantomData<T>,
 }
 
 impl<T: DeserializeOwned> PgDbItemTrackerStorage<T> {
-    pub fn new(conn_string: String) -> PgDbItemTrackerStorage<T> {
-        let t_connection: Connection = Connection::connect(conn_string, TlsMode::None).unwrap();
-        PgDbItemTrackerStorage {
-            db_conn: t_connection,
+    pub async fn new(conn_string: String) -> StorageResult<PgDbItemTrackerStorage<T>> {
+        let (client, connection) = tokio_postgres::connect(&conn_string, NoTls).await?;
+        tokio::spawn(async move { connection.await });
+        Ok(PgDbItemTrackerStorage {
             item_type: PhantomData,
-        }
+            client: Arc::new(client),
+        })
     }
 }
 
-impl<T: DeserializeOwned + std::marker::Send> ItemStorageTrait<T> for PgDbItemTrackerStorage<T> {
-    fn get_items(&self, type_id: &String, owner_uuid: &uuid::Uuid) -> StorageResult<Vec<Item<T>>> {
+#[async_trait]
+impl<T: DeserializeOwned + std::marker::Send + std::marker::Sync> ItemStorageTrait<T>
+    for PgDbItemTrackerStorage<T>
+{
+    async fn get_items(
+        &self,
+        type_id: &String,
+        owner_uuid: &uuid::Uuid,
+    ) -> StorageResult<Vec<Item<T>>> {
         let mut result: Vec<Item<T>> = Vec::new();
-        let query: String = "
+        let query = "
         select id, uuid, configuration, expired_after, refresh_every, created_on, updated_on, owner_, type_
         from tracker.item
         where 
         1=1
         and type_ = $1 
         and owner_ = $2
-        order by id asc;"
-            .to_string();
+        order by id asc;";
 
-        for row in &self
-            .db_conn
-            .query(&query, &[&type_id, &owner_uuid])
-            .unwrap()
-        {
+        for row in &self.client.query(query, &[&type_id, &owner_uuid]).await? {
             let parsed_config: Option<T> = match serde_json::from_value(row.get("configuration")) {
                 Ok(config) => Some(config),
                 Err(_) => None,

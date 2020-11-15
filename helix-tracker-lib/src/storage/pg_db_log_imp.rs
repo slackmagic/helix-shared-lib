@@ -1,37 +1,41 @@
 use crate::core::log::*;
 use crate::storage::error::*;
 use crate::storage::traits::LogStorageTrait;
-use postgres::{Connection, TlsMode};
+use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use sha1::{Digest, Sha1};
 use std::marker::PhantomData;
+use std::sync::Arc;
+use tokio_postgres::{Client, NoTls};
 use uuid;
 
 pub struct PgDbLogTrackerStorage<T: Serialize + DeserializeOwned> {
-    pub db_conn: Connection,
+    pub client: Arc<Client>,
     item_type: PhantomData<T>,
 }
 
 impl<T: Serialize + DeserializeOwned> PgDbLogTrackerStorage<T> {
-    pub fn new(conn_string: String) -> PgDbLogTrackerStorage<T> {
-        let t_connection: Connection = Connection::connect(conn_string, TlsMode::None).unwrap();
-        PgDbLogTrackerStorage {
-            db_conn: t_connection,
+    pub async fn new(conn_string: String) -> StorageResult<PgDbLogTrackerStorage<T>> {
+        let (client, connection) = tokio_postgres::connect(&conn_string, NoTls).await?;
+        tokio::spawn(async move { connection.await });
+
+        Ok(PgDbLogTrackerStorage {
             item_type: PhantomData,
-        }
+            client: Arc::new(client),
+        })
     }
 }
 
-impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
+#[async_trait]
+impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> LogStorageTrait<T>
     for PgDbLogTrackerStorage<T>
 {
-    fn add_log(&self, item_id: &uuid::Uuid, payload: &T) -> StorageResult<Option<Log<T>>> {
-        let query: String = "
+    async fn add_log(&self, item_id: &uuid::Uuid, payload: &T) -> StorageResult<Option<Log<T>>> {
+        let query = "
         INSERT INTO tracker.log
         VALUES (DEFAULT,$1, $2, DEFAULT,$3)
-        RETURNING uuid, created_on, data, item_;"
-            .to_string();
+        RETURNING uuid, created_on, data, item_;";
 
         let json_data = serde_json::to_value(payload).unwrap();
 
@@ -40,8 +44,10 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         let hash = &hasher.finalize()[..];
         let hash = std::str::from_utf8(hash).unwrap();
 
-        let stmt = &self.db_conn.prepare(&query).unwrap();
-        let row_inserted = stmt.query(&[&hash, &json_data, &item_id]).unwrap();
+        let row_inserted = &self
+            .client
+            .query(query, &[&hash, &json_data, &item_id])
+            .await?;
 
         row_inserted.iter().next().unwrap();
 
@@ -66,14 +72,14 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         }
     }
 
-    fn get_logs_by_type(
+    async fn get_logs_by_type(
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
     ) -> StorageResult<Vec<Log<T>>> {
         let mut result: Vec<Log<T>> = Vec::new();
 
-        let query: String = "
+        let query = "
         SELECT *
         FROM
             tracker.log,
@@ -82,13 +88,9 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         AND tracker.item.id = tracker.log.item_
         AND tracker.item.type_ = $1
         AND tracker.item.owner_ = $2
-        ORDER BY tracker.item.id asc "
-            .to_string();
+        ORDER BY tracker.item.id asc ";
 
-        let rows = &self
-            .db_conn
-            .query(query.as_str(), &[&type_id, &owner_uuid])
-            .unwrap();
+        let rows = &self.client.query(query, &[&type_id, &owner_uuid]).await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
@@ -107,14 +109,14 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         Ok(result)
     }
 
-    fn get_logs_by_item(
+    async fn get_logs_by_item(
         &self,
         item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
     ) -> StorageResult<Vec<Log<T>>> {
         let mut result: Vec<Log<T>> = Vec::new();
 
-        let query: String = "
+        let query = "
         SELECT *
         FROM
             tracker.log,
@@ -122,13 +124,9 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         WHERE 1=1
         AND tracker.log.item_ =$1
         AND tracker.item.owner_ = $2
-        ORDER BY tracker.item.id asc "
-            .to_string();
+        ORDER BY tracker.item.id asc ";
 
-        let rows = &self
-            .db_conn
-            .query(query.as_str(), &[&item_id, &owner_uuid])
-            .unwrap();
+        let rows = &self.client.query(query, &[&item_id, &owner_uuid]).await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
@@ -147,14 +145,14 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         Ok(result)
     }
 
-    fn get_last_logs_by_type(
+    async fn get_last_logs_by_type(
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
     ) -> StorageResult<Vec<Log<T>>> {
         let mut result: Vec<Log<T>> = Vec::new();
 
-        let query: String = "
+        let query = "
         SELECT logs_with_col_numbers.uuid as log_uuid, *
         FROM 
             (SELECT *, ROW_NUMBER() OVER (PARTITION BY item_ ORDER BY created_on DESC) col 
@@ -166,13 +164,9 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         AND tracker.item.type_ = $1
         AND logs_with_col_numbers.col = 1
         AND tracker.item.owner_ = $2
-        ORDER BY tracker.item.id asc "
-            .to_string();
+        ORDER BY tracker.item.id asc ";
 
-        let rows = &self
-            .db_conn
-            .query(query.as_str(), &[&type_id, &owner_uuid])
-            .unwrap();
+        let rows = &self.client.query(query, &[&type_id, &owner_uuid]).await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
@@ -191,14 +185,14 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         Ok(result)
     }
 
-    fn get_last_logs_by_item(
+    async fn get_last_logs_by_item(
         &self,
         item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
     ) -> StorageResult<Vec<Log<T>>> {
         let mut result: Vec<Log<T>> = Vec::new();
 
-        let query: String = "
+        let query = "
         SELECT logs_with_col_numbers.uuid as log_uuid, *
         FROM 
             (SELECT *, ROW_NUMBER() OVER (PARTITION BY item_ ORDER BY created_on DESC) col 
@@ -209,13 +203,9 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         AND logs_with_col_numbers.item_ = $1
         AND logs_with_col_numbers.col = 1
         AND tracker.item.owner_ = $2
-        ORDER BY tracker.item.id asc "
-            .to_string();
+        ORDER BY tracker.item.id asc ";
 
-        let rows = &self
-            .db_conn
-            .query(query.as_str(), &[&item_id, &owner_uuid])
-            .unwrap();
+        let rows = &self.client.query(query, &[&item_id, &owner_uuid]).await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {

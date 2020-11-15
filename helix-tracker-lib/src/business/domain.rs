@@ -3,6 +3,7 @@ use crate::business::traits::TrackerDomainTrait;
 use crate::core::item::*;
 use crate::core::log::*;
 use crate::storage::traits::*;
+use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::boxed::Box;
@@ -24,62 +25,78 @@ impl<I, L> TrackerDomain<I, L> {
     }
 }
 
-impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned> TrackerDomainTrait<I, L>
-    for TrackerDomain<I, L>
+#[async_trait]
+impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned + std::marker::Sync>
+    TrackerDomainTrait<I, L> for TrackerDomain<I, L>
 {
-    fn create_item(&self, item: Item<I>) -> TrackerDomainResult<Item<I>> {
-        Err(TrackerDomainError::NotImplemented)
-    }
-
-    fn get_items(
+    async fn get_items(
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
     ) -> TrackerDomainResult<Vec<Item<I>>> {
-        Ok(self.item_storage.get_items(type_id, owner_uuid)?)
+        match self.item_storage.get_items(type_id, owner_uuid).await {
+            Ok(result) => Ok(result),
+            Err(_) => Err(TrackerDomainError::StorageError),
+        }
     }
 
-    fn add_log(&self, item_id: &uuid::Uuid, payload: &L) -> TrackerDomainResult<Option<Log<L>>> {
-        Ok(self.log_storage.add_log(item_id, payload)?)
+    async fn add_log(
+        &self,
+        item_id: &uuid::Uuid,
+        payload: &L,
+    ) -> TrackerDomainResult<Option<Log<L>>> {
+        Ok(self.log_storage.add_log(item_id, payload).await?)
     }
 
-    fn udpate_log(&self, item_id: &uuid::Uuid, payload: &L) -> TrackerDomainResult<Option<Log<L>>> {
-        Err(TrackerDomainError::NotImplemented)
-    }
-
-    fn get_logs_by_item(
+    async fn get_logs_by_item(
         &self,
         item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
     ) -> TrackerDomainResult<Vec<Log<L>>> {
-        Ok(self.log_storage.get_logs_by_item(item_id, owner_uuid)?)
+        match self.log_storage.get_logs_by_item(item_id, owner_uuid).await {
+            Ok(result) => Ok(result),
+            Err(_) => Err(TrackerDomainError::StorageError),
+        }
     }
 
-    fn get_logs_by_type(
+    async fn get_logs_by_type(
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
     ) -> TrackerDomainResult<Vec<Log<L>>> {
-        Ok(self.log_storage.get_logs_by_type(type_id, owner_uuid)?)
+        match self.log_storage.get_logs_by_type(type_id, owner_uuid).await {
+            Ok(result) => Ok(result),
+            Err(_) => Err(TrackerDomainError::StorageError),
+        }
     }
 
-    fn get_last_logs_by_item(
+    async fn get_last_logs_by_item(
         &self,
         item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
     ) -> TrackerDomainResult<Vec<Log<L>>> {
-        Ok(self
+        match self
             .log_storage
-            .get_last_logs_by_item(item_id, owner_uuid)?)
+            .get_last_logs_by_item(item_id, owner_uuid)
+            .await
+        {
+            Ok(result) => Ok(result),
+            Err(_) => Err(TrackerDomainError::StorageError),
+        }
     }
 
-    fn get_last_logs_by_type(
+    async fn get_last_logs_by_type(
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
     ) -> TrackerDomainResult<Vec<Log<L>>> {
-        Ok(self
+        match self
             .log_storage
-            .get_last_logs_by_type(type_id, owner_uuid)?)
+            .get_last_logs_by_type(type_id, owner_uuid)
+            .await
+        {
+            Ok(result) => Ok(result),
+            Err(_) => Err(TrackerDomainError::StorageError),
+        }
     }
 }

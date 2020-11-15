@@ -24,6 +24,11 @@ pub enum StorageError {
         #[from]
         source: postgres::Error,
     },
+    #[error("Tokio Postgres error: {source}")]
+    TokioPostGres {
+        #[from]
+        source: tokio_postgres::Error,
+    },
 }
 
 //Define a generic error type to simplify return.

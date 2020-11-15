@@ -17,11 +17,12 @@ impl<T: DeserializeOwned> PgDbItemTrackerStorage<T> {
     pub async fn new(conn_string: String) -> StorageResult<PgDbItemTrackerStorage<T>> {
         println!("INIT Connection to DB");
         let (client, connection) = tokio_postgres::connect(&conn_string, NoTls).await?;
-        tokio::spawn(async move {
+        let connection = connection.await?;
+        /*tokio::spawn(async move {
             if let Err(e) = connection.await {
                 eprintln!("connection error: {}", e);
             }
-        });
+        });*/
         println!("DONE Connection to DB");
         Ok(PgDbItemTrackerStorage {
             item_type: PhantomData,

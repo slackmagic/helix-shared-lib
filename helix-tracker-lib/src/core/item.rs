@@ -3,8 +3,7 @@ use uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Item<T> {
-    pub id: i32,
-    pub uuid: uuid::Uuid,
+    pub id: uuid::Uuid,
     pub configuration: Option<T>,
     pub expired_after: Option<String>,
     pub refresh_every: Option<String>,
@@ -16,8 +15,7 @@ pub struct Item<T> {
 
 impl<T> Item<T> {
     pub fn new(
-        id: i32,
-        uuid: uuid::Uuid,
+        id: uuid::Uuid,
         configuration: Option<T>,
         expired_after: Option<String>,
         refresh_every: Option<String>,
@@ -28,7 +26,6 @@ impl<T> Item<T> {
     ) -> Item<T> {
         Item {
             id: id,
-            uuid: uuid,
             configuration: configuration,
             expired_after: expired_after,
             refresh_every: refresh_every,

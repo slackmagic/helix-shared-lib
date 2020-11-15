@@ -27,6 +27,10 @@ impl<I, L> TrackerDomain<I, L> {
 impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned> TrackerDomainTrait<I, L>
     for TrackerDomain<I, L>
 {
+    fn create_item<T: DeserializeOwned>(&self, item: Item<T>) -> TrackerDomainResult<Item<T>> {
+        Err(TrackerDomainError::NotImplemented)
+    }
+
     fn get_items(
         &self,
         type_id: &String,
@@ -35,8 +39,20 @@ impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned> TrackerDo
         Ok(self.item_storage.get_items(type_id, owner_uuid)?)
     }
 
-    fn add_log(&self, item_id: &i32, payload: &L) -> TrackerDomainResult<Option<Log<L>>> {
+    fn add_log(&self, item_id: &uuid::Uuid, payload: &L) -> TrackerDomainResult<Option<Log<L>>> {
         Ok(self.log_storage.add_log(item_id, payload)?)
+    }
+
+    fn udpate_log(&self, item_id: &uuid::Uuid, payload: &L) -> TrackerDomainResult<Option<Log<L>>> {
+        Err(TrackerDomainError::NotImplemented)
+    }
+
+    fn get_logs_by_item(
+        &self,
+        item_id: &uuid::Uuid,
+        owner_uuid: &uuid::Uuid,
+    ) -> TrackerDomainResult<Vec<Log<L>>> {
+        Ok(self.log_storage.get_logs_by_item(item_id, owner_uuid)?)
     }
 
     fn get_logs_by_type(
@@ -45,6 +61,16 @@ impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned> TrackerDo
         owner_uuid: &uuid::Uuid,
     ) -> TrackerDomainResult<Vec<Log<L>>> {
         Ok(self.log_storage.get_logs_by_type(type_id, owner_uuid)?)
+    }
+
+    fn get_last_logs_by_item(
+        &self,
+        item_id: &uuid::Uuid,
+        owner_uuid: &uuid::Uuid,
+    ) -> TrackerDomainResult<Vec<Log<L>>> {
+        Ok(self
+            .log_storage
+            .get_last_logs_by_item(item_id, owner_uuid)?)
     }
 
     fn get_last_logs_by_type(

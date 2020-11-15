@@ -8,7 +8,13 @@ pub trait ItemStorageTrait<T: DeserializeOwned>: Send {
 }
 
 pub trait LogStorageTrait<T: DeserializeOwned>: Send {
-    fn add_log(&self, item_id: &i32, payload: &T) -> StorageResult<Option<Log<T>>>;
+    fn add_log(&self, item_id: &uuid::Uuid, payload: &T) -> StorageResult<Option<Log<T>>>;
+
+    fn get_logs_by_item(
+        &self,
+        item_id: &uuid::Uuid,
+        owner_uuid: &uuid::Uuid,
+    ) -> StorageResult<Vec<Log<T>>>;
 
     fn get_logs_by_type(
         &self,
@@ -19,6 +25,12 @@ pub trait LogStorageTrait<T: DeserializeOwned>: Send {
     fn get_last_logs_by_type(
         &self,
         type_id: &String,
+        owner_uuid: &uuid::Uuid,
+    ) -> StorageResult<Vec<Log<T>>>;
+
+    fn get_last_logs_by_item(
+        &self,
+        item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
     ) -> StorageResult<Vec<Log<T>>>;
 }

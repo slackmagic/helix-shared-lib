@@ -4,6 +4,7 @@ use crate::storage::traits::LogStorageTrait;
 use postgres::{Connection, TlsMode};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use sha1::{Digest, Sha1};
 use std::marker::PhantomData;
 use uuid;
 
@@ -25,16 +26,22 @@ impl<T: Serialize + DeserializeOwned> PgDbLogTrackerStorage<T> {
 impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
     for PgDbLogTrackerStorage<T>
 {
-    fn add_log(&self, item_id: &i32, payload: &T) -> StorageResult<Option<Log<T>>> {
+    fn add_log(&self, item_id: &uuid::Uuid, payload: &T) -> StorageResult<Option<Log<T>>> {
         let query: String = "
         INSERT INTO tracker.log
-        VALUES (DEFAULT,$1,DEFAULT,$2)
+        VALUES (DEFAULT,$1, $2, DEFAULT,$3)
         RETURNING uuid, created_on, data, item_;"
             .to_string();
 
         let json_data = serde_json::to_value(payload).unwrap();
+
+        let mut hasher = Sha1::new();
+        hasher.update(json_data.to_string().as_bytes());
+        let hash = &hasher.finalize()[..];
+        let hash = std::str::from_utf8(hash).unwrap();
+
         let stmt = &self.db_conn.prepare(&query).unwrap();
-        let row_inserted = stmt.query(&[&json_data, &item_id]).unwrap();
+        let row_inserted = stmt.query(&[&hash, &json_data, &item_id]).unwrap();
 
         row_inserted.iter().next().unwrap();
 
@@ -100,6 +107,46 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         Ok(result)
     }
 
+    fn get_logs_by_item(
+        &self,
+        item_id: &uuid::Uuid,
+        owner_uuid: &uuid::Uuid,
+    ) -> StorageResult<Vec<Log<T>>> {
+        let mut result: Vec<Log<T>> = Vec::new();
+
+        let query: String = "
+        SELECT *
+        FROM
+            tracker.log,
+            tracker.item
+        WHERE 1=1
+        AND tracker.log.item_ =$1
+        AND tracker.item.owner_ = $2
+        ORDER BY tracker.item.id asc "
+            .to_string();
+
+        let rows = &self
+            .db_conn
+            .query(query.as_str(), &[&item_id, &owner_uuid])
+            .unwrap();
+
+        for row in rows {
+            let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
+                Ok(payload) => Some(payload),
+                Err(_) => None,
+            };
+            result.push(Log {
+                uuid: row.get("uuid"),
+                created_on: row.get("created_on"),
+                hash: row.get("hash"),
+                data: parsed_payload,
+                item_id: row.get("item_"),
+            });
+        }
+
+        Ok(result)
+    }
+
     fn get_last_logs_by_type(
         &self,
         type_id: &String,
@@ -125,6 +172,49 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send> LogStorageTrait<T>
         let rows = &self
             .db_conn
             .query(query.as_str(), &[&type_id, &owner_uuid])
+            .unwrap();
+
+        for row in rows {
+            let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
+                Ok(payload) => Some(payload),
+                Err(_) => None,
+            };
+            result.push(Log {
+                uuid: row.get("uuid"),
+                created_on: row.get("created_on"),
+                hash: row.get("hash"),
+                data: parsed_payload,
+                item_id: row.get("item_"),
+            });
+        }
+
+        Ok(result)
+    }
+
+    fn get_last_logs_by_item(
+        &self,
+        item_id: &uuid::Uuid,
+        owner_uuid: &uuid::Uuid,
+    ) -> StorageResult<Vec<Log<T>>> {
+        let mut result: Vec<Log<T>> = Vec::new();
+
+        let query: String = "
+        SELECT logs_with_col_numbers.uuid as log_uuid, *
+        FROM 
+            (SELECT *, ROW_NUMBER() OVER (PARTITION BY item_ ORDER BY created_on DESC) col 
+            FROM tracker.log
+            ORDER BY uuid ASC) logs_with_col_numbers,
+            tracker.item
+        where 1=1
+        AND logs_with_col_numbers.item_ = $1
+        AND logs_with_col_numbers.col = 1
+        AND tracker.item.owner_ = $2
+        ORDER BY tracker.item.id asc "
+            .to_string();
+
+        let rows = &self
+            .db_conn
+            .query(query.as_str(), &[&item_id, &owner_uuid])
             .unwrap();
 
         for row in rows {

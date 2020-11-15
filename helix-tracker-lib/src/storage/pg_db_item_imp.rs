@@ -46,7 +46,6 @@ impl<T: DeserializeOwned + std::marker::Send> ItemStorageTrait<T> for PgDbItemTr
 
             let item: Item<T> = Item {
                 id: row.get("id"),
-                uuid: row.get("uuid"),
                 configuration: parsed_config,
                 expired_after: row.get("expired_after"),
                 refresh_every: row.get("refresh_every"),

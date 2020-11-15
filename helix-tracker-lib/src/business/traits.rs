@@ -7,7 +7,7 @@ use serde::Serialize;
 pub trait TrackerDomainTrait<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned>:
     Send
 {
-    fn create_item<T: DeserializeOwned>(&self, item: Item<T>) -> TrackerDomainResult<Item<T>>;
+    fn create_item(&self, item: Item<I>) -> TrackerDomainResult<Item<I>>;
 
     fn get_items(
         &self,

@@ -27,7 +27,7 @@ impl<I, L> TrackerDomain<I, L> {
 impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned> TrackerDomainTrait<I, L>
     for TrackerDomain<I, L>
 {
-    fn create_item<T: DeserializeOwned>(&self, item: Item<T>) -> TrackerDomainResult<Item<T>> {
+    fn create_item(&self, item: Item<I>) -> TrackerDomainResult<Item<I>> {
         Err(TrackerDomainError::NotImplemented)
     }
 

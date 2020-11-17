@@ -2,10 +2,10 @@ use crate::core::log::*;
 use crate::storage::error::*;
 use crate::storage::traits::LogStorageTrait;
 use async_trait::async_trait;
+use blake2b_simd::blake2b;
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use sha2::{Digest, Sha256};
 use std::marker::PhantomData;
 use tokio_postgres::NoTls;
 use uuid;
@@ -52,12 +52,9 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
 
         let json_data = serde_json::to_value(payload).unwrap();
 
-        let mut hasher = Sha256::new();
-        hasher.update(json_data.to_string().as_bytes());
-        let hash = &hasher.finalize()[..];
-        println!("HASH : {:?}", &hash);
-
-        let hash = hex::decode(hash).unwrap();
+        let hash = blake2b(json_data.to_string().as_bytes())
+            .to_hex()
+            .to_string();
         println!("HASH : {:?}", &hash);
 
         let client = &self.pool.get().await.unwrap();
@@ -240,5 +237,17 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         }
 
         Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn hash_from_json() {
+        let expected = "5c8c3952796b2bc109182132acd0c9d2b4006f2733a1238a2bc904552314aa1cd2057e47407796993c9cbbd240a16731ce64081ab6fb2808117c9ca7e2a65588";
+        let hash = blake2b(b"{a json}");
+        println!("{:?}", &hash.to_hex().to_string());
+        assert_eq!(expected, &hash.to_hex());
     }
 }

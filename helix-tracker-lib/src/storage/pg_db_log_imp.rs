@@ -16,9 +16,19 @@ pub struct PgDbLogTrackerStorage<T: Serialize + DeserializeOwned> {
 }
 
 impl<T: Serialize + DeserializeOwned> PgDbLogTrackerStorage<T> {
-    pub fn new(conn_string: String) -> PgDbLogTrackerStorage<T> {
+    pub fn new(
+        database: String,
+        host: String,
+        port: u16,
+        user: String,
+        password: String,
+    ) -> PgDbLogTrackerStorage<T> {
         let mut cfg = Config::new();
-        cfg.dbname = Some(conn_string);
+        cfg.dbname = Some(database);
+        cfg.host = Some(host);
+        cfg.port = Some(port);
+        cfg.user = Some(user);
+        cfg.password = Some(password);
         cfg.manager = Some(ManagerConfig {
             recycling_method: RecyclingMethod::Fast,
         });

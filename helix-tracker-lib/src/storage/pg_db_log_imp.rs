@@ -16,17 +16,17 @@ pub struct PgDbLogTrackerStorage<T: Serialize + DeserializeOwned> {
 }
 
 impl<T: Serialize + DeserializeOwned> PgDbLogTrackerStorage<T> {
-    pub fn new(conn_string: String) -> StorageResult<PgDbLogTrackerStorage<T>> {
+    pub fn new(conn_string: String) -> PgDbLogTrackerStorage<T> {
         let mut cfg = Config::new();
         cfg.dbname = Some(conn_string);
         cfg.manager = Some(ManagerConfig {
             recycling_method: RecyclingMethod::Fast,
         });
 
-        Ok(PgDbLogTrackerStorage {
+        PgDbLogTrackerStorage {
             item_type: PhantomData,
             pool: cfg.create_pool(NoTls).unwrap(),
-        })
+        }
     }
 }
 

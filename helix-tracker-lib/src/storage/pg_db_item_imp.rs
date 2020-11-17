@@ -14,17 +14,17 @@ pub struct PgDbItemTrackerStorage<T: DeserializeOwned> {
 }
 
 impl<T: DeserializeOwned> PgDbItemTrackerStorage<T> {
-    pub fn new(conn_string: String) -> StorageResult<PgDbItemTrackerStorage<T>> {
+    pub fn new(conn_string: String) -> PgDbItemTrackerStorage<T> {
         let mut cfg = Config::new();
         cfg.dbname = Some(conn_string);
         cfg.manager = Some(ManagerConfig {
             recycling_method: RecyclingMethod::Fast,
         });
 
-        Ok(PgDbItemTrackerStorage {
+        PgDbItemTrackerStorage {
             item_type: PhantomData,
             pool: cfg.create_pool(NoTls).unwrap(),
-        })
+        }
     }
 }
 

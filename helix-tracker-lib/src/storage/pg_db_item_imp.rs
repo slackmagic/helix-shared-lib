@@ -50,7 +50,7 @@ impl<T: DeserializeOwned + std::marker::Send + std::marker::Sync> ItemStorageTra
     ) -> StorageResult<Vec<Item<T>>> {
         let mut result: Vec<Item<T>> = Vec::new();
         let query = "
-        select id, uuid, configuration, expired_after, refresh_every, created_on, updated_on, owner_, type_
+        select id, configuration, expired_after, refresh_every, created_on, updated_on, owner_, type_
         from tracker.item
         where 
         1=1

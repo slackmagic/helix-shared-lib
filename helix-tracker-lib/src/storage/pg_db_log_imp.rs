@@ -55,6 +55,8 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         let mut hasher = Sha256::new();
         hasher.update(json_data.to_string().as_bytes());
         let hash = &hasher.finalize()[..];
+        println!("HASH : {:?}", &hash);
+
         let hash = hex::decode(hash)?;
 
         println!("HASH : {:?}", &hash);

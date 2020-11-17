@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use sha1::{Digest, Sha1};
+use sha2::{Digest, Sha256, Sha512};
 use std::marker::PhantomData;
 use tokio_postgres::NoTls;
 use uuid;
@@ -52,7 +52,7 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
 
         let json_data = serde_json::to_value(payload).unwrap();
 
-        let mut hasher = Sha1::new();
+        let mut hasher = Sha256::new();
         hasher.update(json_data.to_string().as_bytes());
         let hash = &hasher.finalize()[..];
         let hash = std::str::from_utf8(hash).unwrap();

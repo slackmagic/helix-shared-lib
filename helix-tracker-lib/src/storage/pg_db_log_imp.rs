@@ -57,8 +57,7 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         let hash = &hasher.finalize()[..];
         println!("HASH : {:?}", &hash);
 
-        let hash = hex::decode(hash)?;
-
+        let hash = hex::decode(hash).unwrap();
         println!("HASH : {:?}", &hash);
 
         let client = &self.pool.get().await.unwrap();

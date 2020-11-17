@@ -29,6 +29,11 @@ pub enum StorageError {
         #[from]
         source: tokio_postgres::Error,
     },
+    #[error("Hex error: {source}")]
+    Hex {
+        #[from]
+        source: hex::FromHexError,
+    },
 }
 
 //Define a generic error type to simplify return.

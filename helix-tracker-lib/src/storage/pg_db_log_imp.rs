@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use sha2::{Digest, Sha256, Sha512};
+use sha2::{Digest, Sha256};
 use std::marker::PhantomData;
 use tokio_postgres::NoTls;
 use uuid;
@@ -55,7 +55,7 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         let mut hasher = Sha256::new();
         hasher.update(json_data.to_string().as_bytes());
         let hash = &hasher.finalize()[..];
-        let hash = std::str::from_utf8(hash).unwrap();
+        let hash = hex::decode(hash)?;
 
         let client = &self.pool.get().await.unwrap();
         let row_inserted = client.query(query, &[&hash, &json_data, &item_id]).await?;

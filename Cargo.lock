@@ -1003,6 +1003,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "deadpool-postgres",
+ "hex 0.4.2",
  "postgres",
  "serde",
  "serde_derive",
@@ -1027,6 +1028,12 @@ name = "hex"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6a22814455d41612f41161581c2883c0c6a1c41852729b17d5ed88f01e153aa"
+
+[[package]]
+name = "hex"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "644f9158b2f133fd50f5fb3242878846d9eb792e445c893805ff0e3824006e35"
 
 [[package]]
 name = "hmac"
@@ -1573,7 +1580,7 @@ checksum = "ffac35b3e0029b404c24a3b82149b4e904f293e8ca4a327eefa24d3ca50df36f"
 dependencies = [
  "chrono",
  "fallible-iterator 0.1.6",
- "hex",
+ "hex 0.2.0",
  "phf 0.7.24",
  "postgres-protocol 0.3.2",
  "serde_json",

@@ -45,11 +45,6 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
     for PgDbLogTrackerStorage<T>
 {
     async fn add_log(&self, item_id: &uuid::Uuid, payload: &T) -> StorageResult<Option<Log<T>>> {
-        let query = "
-        INSERT INTO tracker.log
-        VALUES (DEFAULT,$1, $2, DEFAULT,$3)
-        RETURNING uuid, hash, created_on, data, item_;";
-
         let json_data = serde_json::to_value(payload).unwrap();
 
         let hash = blake2b(json_data.to_string().as_bytes())
@@ -57,11 +52,38 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
             .to_string();
 
         let client = &self.pool.get().await.unwrap();
-        let row_inserted = client.query(query, &[&hash, &json_data, &item_id]).await?;
 
-        row_inserted.iter().next().unwrap();
-
-        match row_inserted.iter().next() {
+        let query = "SELECT * FROM tracker.log where log.hash = $1;";
+        let existing_log = client.query(query, &[&hash]).await?;
+        match existing_log.iter().next() {
+            None => {
+                let query = "
+                INSERT INTO tracker.log
+                VALUES (DEFAULT,$1, $2, DEFAULT,$3)
+                RETURNING uuid, hash, created_on, data, item_;";
+                let row_inserted = client.query(query, &[&hash, &json_data, &item_id]).await?;
+                row_inserted.iter().next().unwrap();
+                match row_inserted.iter().next() {
+                    Some(row) => {
+                        let parsed_payload: Option<T> =
+                            match serde_json::from_value(row.get("data")) {
+                                Ok(payload) => Some(payload),
+                                Err(_) => None,
+                            };
+                        Ok(Some(Log {
+                            uuid: row.get("uuid"),
+                            created_on: row.get("created_on"),
+                            hash: row.get("hash"),
+                            data: parsed_payload,
+                            item_id: row.get("item_"),
+                        }))
+                    }
+                    None => {
+                        println!("HELIX Error impossible to create LOG");
+                        Err(StorageError::CreationImpossible)
+                    }
+                }
+            }
             Some(row) => {
                 let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
                     Ok(payload) => Some(payload),
@@ -74,10 +96,6 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
                     data: parsed_payload,
                     item_id: row.get("item_"),
                 }))
-            }
-            None => {
-                println!("HELIX Error impossible to create LOG");
-                Err(StorageError::CreationImpossible)
             }
         }
     }

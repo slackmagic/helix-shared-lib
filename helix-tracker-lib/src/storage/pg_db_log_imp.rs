@@ -48,7 +48,7 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         let query = "
         INSERT INTO tracker.log
         VALUES (DEFAULT,$1, $2, DEFAULT,$3)
-        RETURNING uuid, created_on, data, item_;";
+        RETURNING uuid, hash, created_on, data, item_;";
 
         let json_data = serde_json::to_value(payload).unwrap();
 

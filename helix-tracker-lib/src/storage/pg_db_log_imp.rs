@@ -57,6 +57,8 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         let hash = &hasher.finalize()[..];
         let hash = hex::decode(hash)?;
 
+        println!("HASH : {:?}", &hash);
+
         let client = &self.pool.get().await.unwrap();
         let row_inserted = client.query(query, &[&hash, &json_data, &item_id]).await?;
 

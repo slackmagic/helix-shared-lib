@@ -2,31 +2,28 @@ use crate::core::item::*;
 use crate::storage::error::*;
 use crate::storage::traits::ItemStorageTrait;
 use async_trait::async_trait;
+use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use serde::de::DeserializeOwned;
 use std::marker::PhantomData;
-use std::sync::Arc;
-use tokio_postgres::{Client, NoTls};
+use tokio_postgres::NoTls;
 use uuid;
 
 pub struct PgDbItemTrackerStorage<T: DeserializeOwned> {
-    pub client: Arc<Client>,
+    pub pool: Pool,
     item_type: PhantomData<T>,
 }
 
 impl<T: DeserializeOwned> PgDbItemTrackerStorage<T> {
-    pub async fn new(conn_string: String) -> StorageResult<PgDbItemTrackerStorage<T>> {
-        println!("INIT Connection to DB");
-        let (client, connection) = tokio_postgres::connect(&conn_string, NoTls).await?;
-        let connection = connection.await?;
-        /*tokio::spawn(async move {
-            if let Err(e) = connection.await {
-                eprintln!("connection error: {}", e);
-            }
-        });*/
-        println!("DONE Connection to DB");
+    pub fn new(conn_string: String) -> StorageResult<PgDbItemTrackerStorage<T>> {
+        let mut cfg = Config::new();
+        cfg.dbname = Some(conn_string);
+        cfg.manager = Some(ManagerConfig {
+            recycling_method: RecyclingMethod::Fast,
+        });
+
         Ok(PgDbItemTrackerStorage {
             item_type: PhantomData,
-            client: Arc::new(client),
+            pool: cfg.create_pool(NoTls).unwrap(),
         })
     }
 }
@@ -50,7 +47,8 @@ impl<T: DeserializeOwned + std::marker::Send + std::marker::Sync> ItemStorageTra
         and owner_ = $2
         order by id asc;";
 
-        for row in &self.client.query(query, &[&type_id, &owner_uuid]).await? {
+        let client = self.pool.get().await.unwrap();
+        for row in client.query(query, &[&type_id, &owner_uuid]).await? {
             let parsed_config: Option<T> = match serde_json::from_value(row.get("configuration")) {
                 Ok(config) => Some(config),
                 Err(_) => None,

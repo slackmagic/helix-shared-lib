@@ -2,27 +2,30 @@ use crate::core::log::*;
 use crate::storage::error::*;
 use crate::storage::traits::LogStorageTrait;
 use async_trait::async_trait;
+use deadpool_postgres::{Config, ManagerConfig, Pool, RecyclingMethod};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use sha1::{Digest, Sha1};
 use std::marker::PhantomData;
-use std::sync::Arc;
-use tokio_postgres::{Client, NoTls};
+use tokio_postgres::NoTls;
 use uuid;
 
 pub struct PgDbLogTrackerStorage<T: Serialize + DeserializeOwned> {
-    pub client: Arc<Client>,
+    pub pool: Pool,
     item_type: PhantomData<T>,
 }
 
 impl<T: Serialize + DeserializeOwned> PgDbLogTrackerStorage<T> {
-    pub async fn new(conn_string: String) -> StorageResult<PgDbLogTrackerStorage<T>> {
-        let (client, connection) = tokio_postgres::connect(&conn_string, NoTls).await?;
-        tokio::spawn(async move { connection.await });
+    pub fn new(conn_string: String) -> StorageResult<PgDbLogTrackerStorage<T>> {
+        let mut cfg = Config::new();
+        cfg.dbname = Some(conn_string);
+        cfg.manager = Some(ManagerConfig {
+            recycling_method: RecyclingMethod::Fast,
+        });
 
         Ok(PgDbLogTrackerStorage {
             item_type: PhantomData,
-            client: Arc::new(client),
+            pool: cfg.create_pool(NoTls).unwrap(),
         })
     }
 }
@@ -44,10 +47,8 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         let hash = &hasher.finalize()[..];
         let hash = std::str::from_utf8(hash).unwrap();
 
-        let row_inserted = &self
-            .client
-            .query(query, &[&hash, &json_data, &item_id])
-            .await?;
+        let client = &self.pool.get().await.unwrap();
+        let row_inserted = client.query(query, &[&hash, &json_data, &item_id]).await?;
 
         row_inserted.iter().next().unwrap();
 
@@ -90,7 +91,8 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         AND tracker.item.owner_ = $2
         ORDER BY tracker.item.id asc ";
 
-        let rows = &self.client.query(query, &[&type_id, &owner_uuid]).await?;
+        let client = &self.pool.get().await.unwrap();
+        let rows = client.query(query, &[&type_id, &owner_uuid]).await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
@@ -126,7 +128,8 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         AND tracker.item.owner_ = $2
         ORDER BY tracker.item.id asc ";
 
-        let rows = &self.client.query(query, &[&item_id, &owner_uuid]).await?;
+        let client = &self.pool.get().await.unwrap();
+        let rows = client.query(query, &[&item_id, &owner_uuid]).await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
@@ -166,7 +169,8 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         AND tracker.item.owner_ = $2
         ORDER BY tracker.item.id asc ";
 
-        let rows = &self.client.query(query, &[&type_id, &owner_uuid]).await?;
+        let client = &self.pool.get().await.unwrap();
+        let rows = client.query(query, &[&type_id, &owner_uuid]).await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
@@ -205,7 +209,8 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         AND tracker.item.owner_ = $2
         ORDER BY tracker.item.id asc ";
 
-        let rows = &self.client.query(query, &[&item_id, &owner_uuid]).await?;
+        let client = &self.pool.get().await.unwrap();
+        let rows = client.query(query, &[&item_id, &owner_uuid]).await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {

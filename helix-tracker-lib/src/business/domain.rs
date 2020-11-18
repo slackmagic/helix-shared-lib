@@ -74,7 +74,7 @@ impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned + std::mar
         &self,
         item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
-        steps: u32,
+        steps: i64,
     ) -> TrackerDomainResult<Vec<Log<L>>> {
         match self
             .log_storage
@@ -90,7 +90,7 @@ impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned + std::mar
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
-        steps: u32,
+        steps: i64,
     ) -> TrackerDomainResult<Vec<Log<L>>> {
         match self
             .log_storage

@@ -37,13 +37,13 @@ pub trait TrackerDomainTrait<I: Serialize + DeserializeOwned, L: Serialize + Des
         &self,
         item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
-        steps: u32,
+        steps: i64,
     ) -> TrackerDomainResult<Vec<Log<L>>>;
 
     async fn get_last_logs_by_type(
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
-        steps: u32,
+        steps: i64,
     ) -> TrackerDomainResult<Vec<Log<L>>>;
 }

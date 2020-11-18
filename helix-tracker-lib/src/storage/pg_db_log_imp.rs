@@ -241,7 +241,7 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         ORDER BY tracker.item.id asc ";
 
         let client = &self.pool.get().await.unwrap();
-        let rows = client.query(query, &[&item_id, &owner_uuid, &1]).await?;
+        let rows = client.query(query, &[&item_id, &owner_uuid]).await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {

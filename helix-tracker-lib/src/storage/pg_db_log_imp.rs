@@ -193,14 +193,15 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         where 1=1
         AND tracker.item.id = logs_with_col_numbers.item_
         AND tracker.item.type_ = $1
-        AND logs_with_col_numbers.col = $3
         AND tracker.item.owner_ = $2
+        AND logs_with_col_numbers.col = $3
         ORDER BY tracker.item.id asc ";
 
         let client = &self.pool.get().await.unwrap();
         let rows = client
             .query(query, &[&type_id, &owner_uuid, &steps])
-            .await?;
+            .await
+            .expect("somthing");
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {

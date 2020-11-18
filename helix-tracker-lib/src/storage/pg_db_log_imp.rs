@@ -236,7 +236,7 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
             tracker.item
         where 1=1
         AND logs_with_col_numbers.item_ = $1
-        AND logs_with_col_numbers.col = $3
+        AND logs_with_col_numbers.col = 1
         AND tracker.item.owner_ = $2
         ORDER BY tracker.item.id asc ";
 

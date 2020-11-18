@@ -74,10 +74,11 @@ impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned + std::mar
         &self,
         item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
+        steps: u32,
     ) -> TrackerDomainResult<Vec<Log<L>>> {
         match self
             .log_storage
-            .get_last_logs_by_item(item_id, owner_uuid)
+            .get_last_logs_by_item(item_id, owner_uuid, steps)
             .await
         {
             Ok(result) => Ok(result),
@@ -89,10 +90,11 @@ impl<I: Serialize + DeserializeOwned, L: Serialize + DeserializeOwned + std::mar
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
+        steps: u32,
     ) -> TrackerDomainResult<Vec<Log<L>>> {
         match self
             .log_storage
-            .get_last_logs_by_type(type_id, owner_uuid)
+            .get_last_logs_by_type(type_id, owner_uuid, steps)
             .await
         {
             Ok(result) => Ok(result),

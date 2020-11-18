@@ -179,6 +179,7 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
+        steps: u32,
     ) -> StorageResult<Vec<Log<T>>> {
         let mut result: Vec<Log<T>> = Vec::new();
 
@@ -192,12 +193,14 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         where 1=1
         AND tracker.item.id = logs_with_col_numbers.item_
         AND tracker.item.type_ = $1
-        AND logs_with_col_numbers.col = 1
+        AND logs_with_col_numbers.col = $3
         AND tracker.item.owner_ = $2
         ORDER BY tracker.item.id asc ";
 
         let client = &self.pool.get().await.unwrap();
-        let rows = client.query(query, &[&type_id, &owner_uuid]).await?;
+        let rows = client
+            .query(query, &[&type_id, &owner_uuid, &steps])
+            .await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {
@@ -220,6 +223,7 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
         &self,
         item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
+        steps: u32,
     ) -> StorageResult<Vec<Log<T>>> {
         let mut result: Vec<Log<T>> = Vec::new();
 
@@ -232,12 +236,14 @@ impl<T: Serialize + DeserializeOwned + std::marker::Send + std::marker::Sync> Lo
             tracker.item
         where 1=1
         AND logs_with_col_numbers.item_ = $1
-        AND logs_with_col_numbers.col = 1
+        AND logs_with_col_numbers.col = $3
         AND tracker.item.owner_ = $2
         ORDER BY tracker.item.id asc ";
 
         let client = &self.pool.get().await.unwrap();
-        let rows = client.query(query, &[&item_id, &owner_uuid]).await?;
+        let rows = client
+            .query(query, &[&item_id, &owner_uuid, &steps])
+            .await?;
 
         for row in rows {
             let parsed_payload: Option<T> = match serde_json::from_value(row.get("data")) {

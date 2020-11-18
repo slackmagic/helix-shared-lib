@@ -33,11 +33,13 @@ pub trait LogStorageTrait<T: DeserializeOwned>: Send + Sync {
         &self,
         type_id: &String,
         owner_uuid: &uuid::Uuid,
+        steps: u32,
     ) -> StorageResult<Vec<Log<T>>>;
 
     async fn get_last_logs_by_item(
         &self,
         item_id: &uuid::Uuid,
         owner_uuid: &uuid::Uuid,
+        steps: u32,
     ) -> StorageResult<Vec<Log<T>>>;
 }

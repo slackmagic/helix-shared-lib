@@ -8,9 +8,6 @@ mod tokenizer;
 use crate::claims::Claims;
 use crate::error::*;
 use actix_web::HttpRequest;
-use chrono::prelude::*;
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
 use std::env;
 use uuid;
 

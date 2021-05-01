@@ -33,7 +33,7 @@ impl HelixAuth {
         }
     }
 
-    pub fn generate_keys(
+    pub fn generate_tokens(
         user: &str,
         user_uuid: &uuid::Uuid,
         person_uuid: &uuid::Uuid,
@@ -76,8 +76,7 @@ impl HelixAuth {
             .validate(&v[1].to_string())
     }
 
-    #[allow(dead_code)]
-    fn refresh_auth_tokens(token: &str) -> Result<(String, String), String> {
+    pub fn refresh_auth_tokens(token: &str) -> Result<(String, String), String> {
         let api_auth_key = env::var("HELIX_API_AUTH_KEY").expect("API_AUTH_KEY not found.");
 
         let tokenizer = tokenizer::Tokenizer::new(api_auth_key.to_string());
@@ -86,30 +85,12 @@ impl HelixAuth {
             .validate(token);
 
         match result {
-            Ok(claims) => HelixAuth::generate_keys(
+            Ok(claims) => HelixAuth::generate_tokens(
                 &claims.get_user().to_owned(),
                 claims.get_user_uuid(),
                 claims.get_person_uuid(),
             ),
             Err(_) => Err("Oops, an error occured.".to_owned()),
         }
-    }
-
-    fn _generate_refresh_data(data: &str) -> String {
-        let salt = env::var("HELIX_API_AUTH_KEY").expect("API_AUTH_KEY not found.");
-        let utc: DateTime<Utc> = Utc::now();
-
-        //Hash construct
-        let mut to_hash: String = String::new();
-        to_hash.push_str(&data);
-        to_hash.push_str(&":".to_owned());
-        to_hash.push_str(&salt);
-        to_hash.push_str(&":".to_owned());
-        to_hash.push_str(&utc.format("%Y %m %d").to_string());
-
-        let mut hasher = Sha256::new();
-        hasher.input_str(&to_hash);
-
-        hasher.result_str()
     }
 }

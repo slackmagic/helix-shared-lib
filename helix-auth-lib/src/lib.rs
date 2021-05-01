@@ -73,7 +73,7 @@ impl HelixAuth {
             .validate(&v[1].to_string())
     }
 
-    pub fn refresh_auth_tokens(token: &str) -> Result<(String, String), String> {
+    pub fn refresh_tokens(token: &str) -> Result<(String, String), String> {
         let api_auth_key = env::var("HELIX_API_AUTH_KEY").expect("API_AUTH_KEY not found.");
 
         let tokenizer = tokenizer::Tokenizer::new(api_auth_key.to_string());

@@ -1,7 +1,7 @@
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Version {
     pub version: String,
-    pub pokemon_name: String,
+    pub version_name: String,
     pub git_version: GitVersion,
 }
 
@@ -15,14 +15,14 @@ pub struct GitVersion {
 impl Version {
     pub fn new(
         version: String,
-        pokemon_name: String,
+        version_name: String,
         git_commit_short_hash: String,
         git_commit_message: String,
         git_commit_date: String,
     ) -> Version {
         Version {
             version: version,
-            pokemon_name: pokemon_name,
+            version_name: version_name,
             git_version: GitVersion {
                 commit_message: git_commit_message,
                 commit_short_hash: git_commit_short_hash,

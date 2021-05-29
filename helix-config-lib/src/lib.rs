@@ -37,6 +37,10 @@ impl Configuration {
         addr
     }
 
+    pub fn get_api_hostname(&self) -> String {
+        env::var("API_HOSTNAME").expect("API_HOSTNAME not found.")
+    }
+
     pub fn get_workers_number(&self) -> usize {
         let str_value = env::var("ACTIX_WORKERS").expect("ACTIX_WORKERS not found.");
         str_value.parse::<usize>().unwrap()

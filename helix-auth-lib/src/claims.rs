@@ -61,7 +61,7 @@ pub fn get_refresh_token_claims(
 
 pub fn get_access_token_validation() -> Validation {
     let sub = "access-token".to_owned();
-    let iss = env::var("HOSTNAME").expect("HOSTNAME not found.");
+    let iss = env::var("API_HOSTNAME").expect("API_HOSTNAME not found.");
 
     get_token_validation(&iss, &sub)
 }
@@ -69,7 +69,7 @@ pub fn get_access_token_validation() -> Validation {
 #[allow(dead_code)]
 pub fn get_refresh_token_validation() -> Validation {
     let sub = "refresh-token".to_owned();
-    let iss = env::var("HOSTNAME").expect("HOSTNAME not found.");
+    let iss = env::var("API_HOSTNAME").expect("API_HOSTNAME not found.");
 
     get_token_validation(&iss, &sub)
 }

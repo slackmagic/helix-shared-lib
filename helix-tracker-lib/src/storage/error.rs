@@ -19,11 +19,6 @@ pub enum StorageError {
         #[from]
         source: serde_json::Error,
     },
-    #[error("Postgres error: {source}")]
-    PostGres {
-        #[from]
-        source: postgres::Error,
-    },
     #[error("Tokio Postgres error: {source}")]
     TokioPostGres {
         #[from]

@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "helix-db-lib",
     "helix-auth-lib",
     "helix-config-lib",
     "helix-tracker-lib",
